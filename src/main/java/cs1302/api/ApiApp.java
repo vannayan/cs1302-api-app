@@ -10,7 +10,8 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 /**
- * REPLACE WITH NON-SHOUTING DESCRIPTION OF YOUR APP.
+ * This app allows users to input any date (e.g. their birthday) to recieve a "Picture of the Day"
+ * from NASA and any national holiday that falls under that date..
  */
 public class ApiApp extends Application {
     Stage stage;
@@ -45,7 +46,7 @@ public class ApiApp extends Application {
         scene = new Scene(root);
 
         // setup stage
-        stage.setTitle("ApiApp!");
+        stage.setTitle("Date Checker!");
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> Platform.exit());
         stage.sizeToScene();
