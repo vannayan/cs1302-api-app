@@ -81,6 +81,13 @@ public class ApiApp extends Application {
     Label apiLabel;
     Region apiRegion2;
 
+    // apiCredentials
+    String configPath;
+    String spotifyId;
+    String spotifySecret;
+    String seatgeekId;
+    String seatgeekSecret;
+
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
      * constructor is executed in Step 2 of the JavaFX Application Life-Cycle.
@@ -113,19 +120,8 @@ public class ApiApp extends Application {
             "Information provided by Spotify API and SeatGeek API.");
         apiRegion2 = new Region();
 
-        // resources/config.properties
-        String configPath = "resources/config.properties";
-        try (FileInputStream configFileStream = new FileInputStream(configPath)) {
-            Properties config = new Properties();
-            config.load(configFileStream);
-            String spotifyId = config.getProperty("spotify.clientid");
-            String spotifySecret = config.getProperty("spotify.clientsecret");
-            String seatgeekId = config.getProperty("seatgeek.clientid");
-            String seatgeekSecret = config.getProperty("seatgeek.clientsecret");
-        } catch (IOException ioe) {
-            System.err.println(ioe);
-            ioe.printStackTrace();
-        } // try-with-resources
+        // apiCredentials
+        apiCredentials();
 
     } // ApiApp
 
@@ -182,6 +178,24 @@ public class ApiApp extends Application {
             methodPlaceholder();
         });
     } // buttonEvents
+
+    /**
+     * Method loads API credentials from resource/config.properties.
+     */
+    public void apiCredentials() {
+        configPath = "resources/config.properties";
+        try (FileInputStream configFileStream = new FileInputStream(configPath)) {
+            Properties config = new Properties();
+            config.load(configFileStream);
+            spotifyId = config.getProperty("spotify.clientid");
+            spotifySecret = config.getProperty("spotify.clientsecret");
+            seatgeekId = config.getProperty("seatgeek.clientid");
+            seatgeekSecret = config.getProperty("seatgeek.clientsecret");
+        } catch (IOException ioe) {
+            System.err.println(ioe);
+            ioe.printStackTrace();
+        } // try-with-resources
+    } // apiCredentials
 
     /**
      * Method pops an alert message that explains to users how to
