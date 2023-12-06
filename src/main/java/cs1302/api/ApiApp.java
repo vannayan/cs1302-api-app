@@ -12,6 +12,10 @@ import java.nio.charset.StandardCharsets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -86,54 +90,69 @@ public class ApiApp extends Application {
         scene = null;
         root = new VBox(1);
 
-        // Nodes for idLayer
+        // idLayer
         idLayer = new HBox(5);
         helpButton = new Button("Help");
         idSearch = new TextField(
             "Enter Artist's Spotify ID...");
         loadButton = new Button("Load");
 
-        // Nodes for messageLayer
+        // messageLayer
         messageLayer = new HBox();
         messageLabel = new Label(
-            " Press the \"Help\" button for instructions on where to get an artist's Spotify ID.");
+            "Press the \"Help\" button for instructions on where to get an artist's Spotify ID.");
 
-        // Nodes for textLayer
+        // textLayer
         textLayer = new ScrollPane();
         textFlow = new TextFlow();
 
-        // Nodes for apiLayer
+        // apiLayer
         apiLayer = new HBox();
         apiRegion1 = new Region();
         apiLabel = new Label(
             "Information provided by Spotify API and SeatGeek API.");
         apiRegion2 = new Region();
+
+        // resources/config.properties
+        String configPath = "resources/config.properties";
+        try (FileInputStream configFileStream = new FileInputStream(configPath)) {
+            Properties config = new Properties();
+            config.load(configFileStream);
+            String spotifyId = config.getProperty("spotify.clientid");
+            String spotifySecret = config.getProperty("spotify.clientsecret");
+            String seatgeekId = config.getProperty("seatgeek.clientid");
+            String seatgeekSecret = config.getProperty("seatgeek.clientsecret");
+        } catch (IOException ioe) {
+            System.err.println(ioe);
+            ioe.printStackTrace();
+        } // try-with-resources
+
     } // ApiApp
 
     /** {@inheritDoc} */
     @Override
     public void init() {
-        // Initialize root
+        // root
         root.getChildren().addAll(idLayer, messageLayer, textLayer, apiLayer);
 
-        // Initialize idLayer
+        // idLayer
         idLayer.getChildren().addAll(helpButton, idSearch, loadButton);
         HBox.setHgrow(idSearch, Priority.ALWAYS);
 
-        // Initialize messageLayer
+        // messageLayer
         messageLayer.getChildren().add(messageLabel);
 
-        // Initialize textLayer
+        // textLayer
         textLayer.setContent(textFlow);
-        textLayer.setPrefHeight(460);
-        textFlow.setMaxWidth(630);
+        textLayer.setPrefHeight(450);
+        textFlow.setMaxWidth(635);
 
-        // Initialize apiLayer
+        // apiLayer
         apiLayer.getChildren().addAll(apiRegion1, apiLabel, apiRegion2);
         HBox.setHgrow(apiRegion1, Priority.ALWAYS);
         HBox.setHgrow(apiRegion2, Priority.ALWAYS);
 
-        // Call buttonEvents
+        // buttonEvents
         buttonEvents();
     } // init
 
@@ -158,6 +177,10 @@ public class ApiApp extends Application {
             helpAlert();
         });
 
+        // loadButton
+        loadButton.setOnAction(e -> {
+            methodPlaceholder();
+        });
     } // buttonEvents
 
     /**
@@ -165,18 +188,28 @@ public class ApiApp extends Application {
      * retrieve an artist's Spotify ID.
      */
     public void helpAlert() {
-        Alert helpAlert = new Alert(AlertType.INFORMATION);
-        helpAlert.setTitle("Help");
-        helpAlert.setHeaderText("Press \"OK\" to continue.");
-        String content1 = "A Spotify ID is the base-62 identifier at the end of a Spotify URL. ";
-        String content2 = "The URL can be obtained from Spotify's website in the search bar.";
-        String contentSeperator = "\n------------------------------";
-        String content3 = "\nAn example URL would look something like this:";
-        String content4 = "\n\"https://open.spotify.com/artist/45eNHdiiabvmbp4erw26rg\"";
-        String content5 = "\n\n\"45eNHdiiabvmbp4erw26rg\" would be the Spotify ID for ILLENIUM.";
-        helpAlert.setContentText(
-            content1 + content2 + contentSeperator + content3 + content4 + content5);
-        helpAlert.showAndWait();
-    } // infoAlert
+        Platform.runLater(() -> {
+            Alert helpAlert = new Alert(AlertType.INFORMATION);
+            helpAlert.setTitle("Help");
+            helpAlert.setHeaderText("Press \"OK\" to continue.");
+            String content1 = "A Spotify ID is the base-62 identifier at the end of a Spotify URL.";
+            String content2 = " The URL can be obtained from Spotify's website in the search bar.";
+            String contentSeperator = "\n------------------------------";
+            String content3 = "\nAn example URL would look something like this:";
+            String content4 = "\n\"https://open.spotify.com/artist/45eNHdiiabvmbp4erw26rg\"\n";
+            String content5 = "\n\"45eNHdiiabvmbp4erw26rg\" would be the Spotify ID for ILLENIUM.";
+            helpAlert.setContentText(
+                content1 + content2 + contentSeperator + content3 + content4 + content5);
+            helpAlert.showAndWait();
+        }); // Platform.runLater
+    } // helpAlert
+
+    /**
+     * Method placeholder for loadButton.
+     */
+    public void methodPlaceholder() {
+        textFlow.getChildren().clear();
+        textFlow.getChildren().add(new Text("button event works."));
+    } // methodPlaceholder
 
 } // ApiApp
