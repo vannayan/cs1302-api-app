@@ -57,36 +57,37 @@ public class ApiApp extends Application {
         .create();
 
     // root
-    Stage stage;
-    Scene scene;
-    VBox root;
+    private Stage stage;
+    private Scene scene;
+    private VBox root;
 
     // idLayer
-    HBox idLayer;
-    Button helpButton;
-    TextField idSearch;
-    Button loadButton;
+    private HBox idLayer;
+    private Button helpButton;
+    private TextField idSearch;
+    private Button loadButton;
 
     // messageLayer
-    HBox messageLayer;
-    Label messageLabel;
+    private HBox messageLayer;
+    private Label messageLabel;
 
     // textLayer
-    ScrollPane textLayer;
-    TextFlow textFlow;
+    private ScrollPane textLayer;
+    private TextFlow textFlow;
 
     // apiLayer
-    HBox apiLayer;
-    Region apiRegion1;
-    Label apiLabel;
-    Region apiRegion2;
+    private HBox apiLayer;
+    private Region apiRegion1;
+    private Label apiLabel;
+    private Region apiRegion2;
 
-    // apiCredentials
-    String configPath;
-    String spotifyId;
-    String spotifySecret;
-    String seatgeekId;
-    String seatgeekSecret;
+    // APIs
+    private static final String CONFIG_PATH = "resources/config.properties";
+    private String spotifyClientID;
+    private String spotifyClientSecret;
+    private String seatgeekClientID;
+    private String seatgeekClientSecret;
+
 
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
@@ -117,7 +118,7 @@ public class ApiApp extends Application {
         apiLayer = new HBox();
         apiRegion1 = new Region();
         apiLabel = new Label(
-            "Information provided by Spotify API and SeatGeek API.");
+            "Data provided by Spotify API and SeatGeek API.");
         apiRegion2 = new Region();
 
         // apiCredentials
@@ -180,24 +181,6 @@ public class ApiApp extends Application {
     } // buttonEvents
 
     /**
-     * Method loads API credentials from resource/config.properties.
-     */
-    public void apiCredentials() {
-        configPath = "resources/config.properties";
-        try (FileInputStream configFileStream = new FileInputStream(configPath)) {
-            Properties config = new Properties();
-            config.load(configFileStream);
-            spotifyId = config.getProperty("spotify.clientid");
-            spotifySecret = config.getProperty("spotify.clientsecret");
-            seatgeekId = config.getProperty("seatgeek.clientid");
-            seatgeekSecret = config.getProperty("seatgeek.clientsecret");
-        } catch (IOException ioe) {
-            System.err.println(ioe);
-            ioe.printStackTrace();
-        } // try-with-resources
-    } // apiCredentials
-
-    /**
      * Method pops an alert message that explains to users how to
      * retrieve an artist's Spotify ID.
      */
@@ -225,5 +208,22 @@ public class ApiApp extends Application {
         textFlow.getChildren().clear();
         textFlow.getChildren().add(new Text("button event works."));
     } // methodPlaceholder
+
+    /**
+     * Method loads API credentials from resource/config.properties.
+     */
+    public void apiCredentials() {
+        try (FileInputStream configFileStream = new FileInputStream(CONFIG_PATH)) {
+            Properties config = new Properties();
+            config.load(configFileStream);
+            spotifyClientID = config.getProperty("spotify.clientid");
+            spotifyClientSecret = config.getProperty("spotify.clientsecret");
+            seatgeekClientID = config.getProperty("seatgeek.clientid");
+            seatgeekClientSecret = config.getProperty("seatgeek.clientsecret");
+        } catch (IOException ioe) {
+            System.err.println(ioe);
+            ioe.printStackTrace();
+        } // try-with-resources
+    } // apiCredentials
 
 } // ApiApp
