@@ -14,6 +14,7 @@ import com.google.gson.GsonBuilder;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Properties;
 
 import javafx.application.Application;
@@ -83,11 +84,11 @@ public class ApiApp extends Application {
 
     // APIs
     private static final String CONFIG_PATH = "resources/config.properties";
+    private static final String TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
     private String spotifyClientID;
     private String spotifyClientSecret;
     private String seatgeekClientID;
     private String seatgeekClientSecret;
-
 
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
@@ -176,6 +177,8 @@ public class ApiApp extends Application {
 
         // loadButton
         loadButton.setOnAction(e -> {
+            String spotifyToken = getSpotifyToken();
+            System.out.println("Spotify Token: " + spotifyToken);
             methodPlaceholder();
         });
     } // buttonEvents
@@ -206,7 +209,7 @@ public class ApiApp extends Application {
      */
     public void methodPlaceholder() {
         textFlow.getChildren().clear();
-        textFlow.getChildren().add(new Text("button event works."));
+        textFlow.getChildren().add(new Text("YAY!"));
     } // methodPlaceholder
 
     /**
@@ -225,5 +228,47 @@ public class ApiApp extends Application {
             ioe.printStackTrace();
         } // try-with-resources
     } // apiCredentials
+
+    /**
+     * Method uses client credentials to request a
+     * Spotify access token.
+     *
+     * @return returns Spotify access token, otherwise return {@code null}.
+     */
+    public String getSpotifyToken() {
+        try {
+            String clientCredentials = spotifyClientID + ":" + spotifyClientSecret;
+            String encodedCredentials = Base64.getEncoder().encodeToString(
+                (clientCredentials).getBytes());
+            String spotifyGrantType = "grant_type=client_credentials";
+            HttpRequest tokenRequest = HttpRequest.newBuilder()
+                .uri(URI.create(TOKEN_ENDPOINT))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("AUthorization", "Basic " + encodedCredentials)
+                .POST(HttpRequest.BodyPublishers.ofString(spotifyGrantType))
+                .build();
+            HttpResponse<String> tokenResponse = HTTP_CLIENT
+                .send(tokenRequest, HttpResponse.BodyHandlers.ofString());
+            if (tokenResponse.statusCode() != 200) {
+                System.out.println("Error response: " + tokenResponse.statusCode());
+                System.out.println(tokenResponse.body());
+                return null;
+            } // if
+            String jsonResponse = tokenResponse.body();
+            int startIndex = jsonResponse.indexOf("access_token") + 15;
+            int endIndex = jsonResponse.indexOf("\"", startIndex);
+            if (startIndex >= 15 && endIndex > startIndex) {
+                String accessToken = jsonResponse.substring(startIndex, endIndex);
+                return accessToken;
+            } else {
+                System.out.println("Error: No access token found in the response.");
+                return null;
+            } // if
+        } catch (Exception e) {
+            System.err.println(e);
+            e.printStackTrace();
+            return null;
+        } // try
+    } // getSpotifyToken
 
 } // ApiApp
