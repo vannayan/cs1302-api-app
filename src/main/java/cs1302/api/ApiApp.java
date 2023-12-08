@@ -50,12 +50,12 @@ public class ApiApp extends Application {
     public static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
         .version(HttpClient.Version.HTTP_2)
         .followRedirects(HttpClient.Redirect.NORMAL)
-        .build();
+        .build(); // HTTP_CLIENT
 
     /** Google {@code GSON} object for parsing JSON-formatted strings. */
     public static Gson GSON = new GsonBuilder()
         .setPrettyPrinting()
-        .create();
+        .create(); // GSON
 
     // root
     private Stage stage;
@@ -82,13 +82,19 @@ public class ApiApp extends Application {
     private Label apiLabel;
     private Region apiRegion2;
 
-    // APIs
+    // apiCredentials
     private static final String CONFIG_PATH = "resources/config.properties";
+
+    // Spotify API
     private static final String TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
+    private static final String ARTISTS_ENDPOINT = "https://api.spotify.com/v1/artists";
     private String spotifyClientID;
     private String spotifyClientSecret;
     private String seatgeekClientID;
     private String seatgeekClientSecret;
+    private String spotifyID;
+    private String spotifyQuery;
+    private String spotifyURI;
 
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
@@ -124,6 +130,9 @@ public class ApiApp extends Application {
 
         // apiCredentials
         apiCredentials();
+
+        // makeSpotifyURI
+        makeSpotifyURI();
 
     } // ApiApp
 
@@ -167,23 +176,6 @@ public class ApiApp extends Application {
     } // start
 
     /**
-     * Method handles all button events.
-     */
-    public void buttonEvents() {
-        // helpButton
-        helpButton.setOnAction(e -> {
-            helpAlert();
-        });
-
-        // loadButton
-        loadButton.setOnAction(e -> {
-            String spotifyToken = getSpotifyToken();
-            System.out.println("Spotify Token: " + spotifyToken);
-            methodPlaceholder();
-        });
-    } // buttonEvents
-
-    /**
      * Method pops an alert message that explains to users how to
      * retrieve an artist's Spotify ID.
      */
@@ -205,12 +197,29 @@ public class ApiApp extends Application {
     } // helpAlert
 
     /**
-     * Method placeholder for loadButton.
+     * Method handles all button events.
      */
-    public void methodPlaceholder() {
+    public void buttonEvents() {
+        // helpButton
+        helpButton.setOnAction(e -> {
+            helpAlert();
+        });
+
+        // loadButton
+        loadButton.setOnAction(e -> {
+            getArtistName(spotifyID);
+            load();
+        });
+    } // buttonEvents
+
+    /**
+     * Method that contains functions for loadButton.
+     */
+    public void load() {
+        String artistName = getArtistName(spotifyID);
         textFlow.getChildren().clear();
-        textFlow.getChildren().add(new Text("YAY!"));
-    } // methodPlaceholder
+        textFlow.getChildren().add(new Text("Spotify Artist Name: " + artistName));
+    } // load
 
     /**
      * Method loads API credentials from resource/config.properties.
@@ -233,42 +242,102 @@ public class ApiApp extends Application {
      * Method uses client credentials to request a
      * Spotify access token.
      *
-     * @return returns Spotify access token, otherwise return {@code null}.
+     * @return returns Spotify access token, otherwise return {@code null} if an error occurs.
      */
     public String getSpotifyToken() {
         try {
-            String clientCredentials = spotifyClientID + ":" + spotifyClientSecret;
-            String encodedCredentials = Base64.getEncoder().encodeToString(
-                (clientCredentials).getBytes());
+            String spotifyClientCredentials = spotifyClientID + ":" + spotifyClientSecret;
+            String spotifyEncodedCredentials = Base64.getEncoder().encodeToString(
+                (spotifyClientCredentials).getBytes());
             String spotifyGrantType = "grant_type=client_credentials";
             HttpRequest tokenRequest = HttpRequest.newBuilder()
                 .uri(URI.create(TOKEN_ENDPOINT))
                 .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("AUthorization", "Basic " + encodedCredentials)
+                .header("Authorization", "Basic " + spotifyEncodedCredentials)
                 .POST(HttpRequest.BodyPublishers.ofString(spotifyGrantType))
-                .build();
+                .build(); // HttpRequest
             HttpResponse<String> tokenResponse = HTTP_CLIENT
-                .send(tokenRequest, HttpResponse.BodyHandlers.ofString());
+                .send(tokenRequest, HttpResponse.BodyHandlers.ofString()); // HttpResponse
             if (tokenResponse.statusCode() != 200) {
                 System.out.println("Error response: " + tokenResponse.statusCode());
                 System.out.println(tokenResponse.body());
                 return null;
             } // if
-            String jsonResponse = tokenResponse.body();
-            int startIndex = jsonResponse.indexOf("access_token") + 15;
-            int endIndex = jsonResponse.indexOf("\"", startIndex);
-            if (startIndex >= 15 && endIndex > startIndex) {
-                String accessToken = jsonResponse.substring(startIndex, endIndex);
+            String tokenResponseBody = tokenResponse.body();
+            int tokenStart = tokenResponseBody.indexOf("access_token") + 15;
+            int tokenEnd = tokenResponseBody.indexOf("\"", tokenStart);
+            if (tokenStart >= 15 && tokenEnd > tokenStart) {
+                String accessToken = tokenResponseBody.substring(tokenStart, tokenEnd);
                 return accessToken;
             } else {
                 System.out.println("Error: No access token found in the response.");
                 return null;
-            } // if
+            } // if-else
         } catch (Exception e) {
             System.err.println(e);
             e.printStackTrace();
             return null;
-        } // try
+        } // try-catch
     } // getSpotifyToken
+
+    /**
+     * Method makes Spotify URI.
+     */
+    public void makeSpotifyURI() {
+        try {
+            spotifyID = URLEncoder.encode(idSearch.getText(), StandardCharsets.UTF_8);
+            spotifyQuery = String.format("/", spotifyID);
+            spotifyURI = ARTISTS_ENDPOINT + spotifyQuery;
+        } catch (Exception e) {
+            System.err.println("Error encoding Spotify ID: " + e.getMessage());
+            e.printStackTrace();
+        } // try-catch
+    } // makeSpotifyURI
+
+    /**
+     * Method uses Spotify access token to retrieve information
+     * about an artist using the 'Get Artist' endpoint.
+     *
+     * @param spotifyID the inputted Spotify ID for a specific Spotify artist.
+     * @return returns Spotify artist's information,
+     * otherwise returns {@code null} if an error ocurs.
+     */
+    public String getArtistName(String spotifyID) {
+        try {
+            String spotifyToken = getSpotifyToken();
+            System.out.println("Spotify Token: " + spotifyToken);
+            if (spotifyToken == null) {
+                System.out.println("Failed to retrieve access token.");
+                return null;
+            } // if
+            HttpRequest artistRequest = HttpRequest.newBuilder()
+                .uri(URI.create(spotifyURI))
+                .header("Authorization", "Bearer " + spotifyToken)
+                .GET()
+                .build(); // HttpRequest
+            HttpResponse<String> artistResponse = HTTP_CLIENT
+                .send(artistRequest, HttpResponse.BodyHandlers.ofString()); // HttpResponse
+            if (artistResponse.statusCode() != 200) {
+                System.out.println("Error response: " + artistResponse.statusCode());
+                System.out.println(artistResponse.body());
+                return null;
+            } // if
+            String artistResponseBody = artistResponse.body();
+            int nameIndex = artistResponseBody.indexOf("\"name\"");
+            if (nameIndex != -1) {
+                int nameStart = artistResponseBody.indexOf("\"", nameIndex + 7) + 1;
+                int nameEnd = artistResponseBody.indexOf("\"", nameStart);
+                if (nameStart != -1 && nameEnd != -1) {
+                    String nameArtist =  artistResponseBody.substring(nameStart, nameEnd);
+                    return nameArtist;
+                } // if
+            } // if
+            return null;
+        } catch (Exception e) {
+            System.err.println(e);
+            e.printStackTrace();
+            return null;
+        } // try-catch
+    } // getArtistName
 
 } // ApiApp
