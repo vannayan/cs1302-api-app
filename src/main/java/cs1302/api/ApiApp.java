@@ -87,13 +87,12 @@ public class ApiApp extends Application {
 
     // Spotify API
     private static final String TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
-    private static final String ARTISTS_ENDPOINT = "https://api.spotify.com/v1/artists";
+    private static final String ARTISTS_ENDPOINT = "https://api.spotify.com/v1/artists/";
     private String spotifyClientID;
     private String spotifyClientSecret;
     private String seatgeekClientID;
     private String seatgeekClientSecret;
     private String spotifyID;
-    private String spotifyQuery;
     private String spotifyURI;
 
     /**
@@ -286,8 +285,7 @@ public class ApiApp extends Application {
     public void makeSpotifyURI() {
         try {
             spotifyID = URLEncoder.encode(idSearch.getText(), StandardCharsets.UTF_8);
-            spotifyQuery = String.format("/", spotifyID);
-            spotifyURI = ARTISTS_ENDPOINT + spotifyQuery;
+            spotifyURI = ARTISTS_ENDPOINT + spotifyID;
         } catch (Exception e) {
             System.err.println("Error encoding Spotify ID: " + e.getMessage());
             e.printStackTrace();
