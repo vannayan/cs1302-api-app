@@ -90,10 +90,13 @@ public class ApiApp extends Application {
     private static final String ARTISTS_ENDPOINT = "https://api.spotify.com/v1/artists/";
     private String spotifyClientID;
     private String spotifyClientSecret;
-    private String seatgeekClientID;
-    private String seatgeekClientSecret;
     private String spotifyID;
     private String spotifyURI;
+
+    // SeatGeek API
+    private static final String EVENTS_ENDPOINT = "https://api.seatgeek.com/2/events";
+    private String seatgeekClientID;
+    private String seatgeekClientSecret;
 
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
@@ -108,7 +111,7 @@ public class ApiApp extends Application {
         idLayer = new HBox(5);
         helpButton = new Button("Help");
         idSearch = new TextField(
-            "Enter Artist's Spotify ID...");
+            "45eNHdiiabvmbp4erw26rg");
         loadButton = new Button("Load");
 
         // messageLayer
@@ -132,6 +135,9 @@ public class ApiApp extends Application {
 
         // makeSpotifyURI
         makeSpotifyURI();
+
+        // buttonEvents
+        buttonEvents();
 
     } // ApiApp
 
@@ -157,9 +163,6 @@ public class ApiApp extends Application {
         apiLayer.getChildren().addAll(apiRegion1, apiLabel, apiRegion2);
         HBox.setHgrow(apiRegion1, Priority.ALWAYS);
         HBox.setHgrow(apiRegion2, Priority.ALWAYS);
-
-        // buttonEvents
-        buttonEvents();
     } // init
 
     /** {@inheritDoc} */
@@ -167,7 +170,7 @@ public class ApiApp extends Application {
     public void start(Stage stage) {
         this.stage = stage;
         scene = new Scene(root, 640, 480);
-        stage.setTitle("Spotify Artist Checker!");
+        stage.setTitle("────── · · ୨Spotify Artist Events୧ · · ──────");
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> Platform.exit());
         stage.sizeToScene();
@@ -206,7 +209,6 @@ public class ApiApp extends Application {
 
         // loadButton
         loadButton.setOnAction(e -> {
-            getArtistName(spotifyID);
             load();
         });
     } // buttonEvents
@@ -217,7 +219,10 @@ public class ApiApp extends Application {
     public void load() {
         String artistName = getArtistName(spotifyID);
         textFlow.getChildren().clear();
-        textFlow.getChildren().add(new Text("Spotify Artist Name: " + artistName));
+        Text nameText1 = new Text("\n     ̗̀ Spotify Artist Name");
+        Text nameText2 = new Text(": " + artistName + "   ̖́");
+        textFlow.getChildren().addAll(
+            nameText1, nameText2);
     } // load
 
     /**
@@ -263,15 +268,11 @@ public class ApiApp extends Application {
                 return null;
             } // if
             String tokenResponseBody = tokenResponse.body();
-            int tokenStart = tokenResponseBody.indexOf("access_token") + 15;
-            int tokenEnd = tokenResponseBody.indexOf("\"", tokenStart);
-            if (tokenStart >= 15 && tokenEnd > tokenStart) {
-                String accessToken = tokenResponseBody.substring(tokenStart, tokenEnd);
-                return accessToken;
-            } else {
-                System.out.println("Error: No access token found in the response.");
-                return null;
-            } // if-else
+            SpotifyTokenResponse spotifyTokenResponse = GSON
+                .<SpotifyTokenResponse>fromJson(
+                    tokenResponseBody, SpotifyTokenResponse.class); // GSON
+            String accessToken = spotifyTokenResponse.getAccessToken();
+            return accessToken;
         } catch (Exception e) {
             System.err.println(e);
             e.printStackTrace();
@@ -304,6 +305,7 @@ public class ApiApp extends Application {
         try {
             String spotifyToken = getSpotifyToken();
             System.out.println("Spotify Token: " + spotifyToken);
+            System.out.println(spotifyURI);
             if (spotifyToken == null) {
                 System.out.println("Failed to retrieve access token.");
                 return null;
@@ -321,16 +323,11 @@ public class ApiApp extends Application {
                 return null;
             } // if
             String artistResponseBody = artistResponse.body();
-            int nameIndex = artistResponseBody.indexOf("\"name\"");
-            if (nameIndex != -1) {
-                int nameStart = artistResponseBody.indexOf("\"", nameIndex + 7) + 1;
-                int nameEnd = artistResponseBody.indexOf("\"", nameStart);
-                if (nameStart != -1 && nameEnd != -1) {
-                    String nameArtist =  artistResponseBody.substring(nameStart, nameEnd);
-                    return nameArtist;
-                } // if
-            } // if
-            return null;
+            SpotifyArtistResponse spotifyArtistResponse = GSON
+                .<SpotifyArtistResponse>fromJson(
+                    artistResponseBody, SpotifyArtistResponse.class); // GSON
+            String name = spotifyArtistResponse.getName();
+            return name;
         } catch (Exception e) {
             System.err.println(e);
             e.printStackTrace();
