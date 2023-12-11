@@ -1,5 +1,7 @@
 package cs1302.api;
 
+import cs1302.api.SeatGeekEventsResponse.Event;
+
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.net.http.HttpRequest;
@@ -15,6 +17,7 @@ import com.google.gson.GsonBuilder;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.List;
 import java.util.Properties;
 
 import javafx.application.Application;
@@ -92,11 +95,15 @@ public class ApiApp extends Application {
     private String spotifyClientSecret;
     private String spotifyID;
     private String spotifyURI;
+    private String spotifyToken;
+    private String artistName;
 
     // SeatGeek API
     private static final String EVENTS_ENDPOINT = "https://api.seatgeek.com/2/events";
     private String seatgeekClientID;
     private String seatgeekClientSecret;
+    private String seatgeekURI;
+    private SeatGeekEventsResponse artistEvents;
 
     /**
      * Constructs an {@code ApiApp} object. This default (i.e., no argument)
@@ -133,8 +140,13 @@ public class ApiApp extends Application {
         // apiCredentials
         apiCredentials();
 
-        // makeSpotifyURI
+        // Spotify API
         makeSpotifyURI();
+        spotifyToken = getSpotifyToken();
+        artistName = getArtistName();
+
+        // SeatGeek API
+//        artistEvents = getArtistEvents();
 
         // buttonEvents
         buttonEvents();
@@ -170,7 +182,7 @@ public class ApiApp extends Application {
     public void start(Stage stage) {
         this.stage = stage;
         scene = new Scene(root, 640, 480);
-        stage.setTitle("────── · · ୨Spotify Artist Events୧ · · ──────");
+        stage.setTitle("────── · · ⊱Spotify Artist Events⊰ · · ──────");
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> Platform.exit());
         stage.sizeToScene();
@@ -217,12 +229,35 @@ public class ApiApp extends Application {
      * Method that contains functions for loadButton.
      */
     public void load() {
-        String artistName = getArtistName(spotifyID);
-        textFlow.getChildren().clear();
-        Text nameText1 = new Text("\n     ̗̀ Spotify Artist Name");
-        Text nameText2 = new Text(": " + artistName + "   ̖́");
-        textFlow.getChildren().addAll(
-            nameText1, nameText2);
+        artistEvents = getArtistEvents();
+        List<Event> events = artistEvents.getEvents();
+        artistEvents.displayEvents();
+
+        Platform.runLater(() -> {
+            textFlow.getChildren().clear();
+            Text nameText1 = new Text("\n     ̗̀ Spotify Artist");
+            Text nameText2 = new Text(": " + artistName + "   ̖́");
+            Text nameText3 = new Text("\n     ---------------");
+            Text eventText = new Text("");
+            if (events == null || events.isEmpty()) {
+                Text noEventsText1 = new Text(
+                    "\n     This Spotify artist has no events listed on SeatGeek at the moment.");
+                Text noEventsText2 = new Text(
+                    "\n     Please choose a different artist.");
+                textFlow.getChildren().addAll(
+                    nameText1, nameText2, nameText3, noEventsText1, noEventsText2);
+            } else {
+                for (int i = 0; i < events.size(); i++) {
+                    Event event = events.get(i);
+                    eventText.setText(eventText.getText() +
+                        "\n      Event Title: " + event.getTitle() +
+                        "\n      Date/Time: " + event.getDateTimeUTC() +
+                        "\n      Venue: " + event.getVenue().getName()  +
+                        "\n     ---------------");
+                } // for
+                textFlow.getChildren().addAll(nameText1, nameText2, nameText3, eventText);
+            } // if-else
+        }); // Platform.runLater
     } // load
 
     /**
@@ -269,8 +304,7 @@ public class ApiApp extends Application {
             } // if
             String tokenResponseBody = tokenResponse.body();
             SpotifyTokenResponse spotifyTokenResponse = GSON
-                .<SpotifyTokenResponse>fromJson(
-                    tokenResponseBody, SpotifyTokenResponse.class); // GSON
+                .fromJson(tokenResponseBody, SpotifyTokenResponse.class); // GSON
             String accessToken = spotifyTokenResponse.getAccessToken();
             return accessToken;
         } catch (Exception e) {
@@ -297,13 +331,11 @@ public class ApiApp extends Application {
      * Method uses Spotify access token to retrieve information
      * about an artist using the 'Get Artist' endpoint.
      *
-     * @param spotifyID the inputted Spotify ID for a specific Spotify artist.
      * @return returns Spotify artist's information,
      * otherwise returns {@code null} if an error ocurs.
      */
-    public String getArtistName(String spotifyID) {
+    public String getArtistName() {
         try {
-            String spotifyToken = getSpotifyToken();
             System.out.println("Spotify Token: " + spotifyToken);
             System.out.println(spotifyURI);
             if (spotifyToken == null) {
@@ -334,5 +366,58 @@ public class ApiApp extends Application {
             return null;
         } // try-catch
     } // getArtistName
+
+    /**
+     * Method makes SeatGeek URI.
+     */
+    public void makeSeatGeekURI() {
+        try {
+            String performersSlug = URLEncoder.encode(artistName, StandardCharsets.UTF_8);
+            performersSlug = performersSlug.replace("+", "-");
+            String query = String.format("?performers.slug=%s&client_id=%s&client_secret=%s",
+                performersSlug, seatgeekClientID, seatgeekClientSecret);
+            seatgeekURI = EVENTS_ENDPOINT + query;
+            System.out.println(performersSlug);
+            System.out.println(seatgeekURI);
+        } catch (Exception e) {
+            System.err.println("Error encoding SeatGeek URI: " + e.getMessage());
+            e.printStackTrace();
+        } // try-catch
+    } // makeSeatGeekURI
+
+    /**
+     * Method uses SeatGeek API and the Spotify artist's
+     * name to retrieve information about the artist's
+     * events using the 'Events' endpoint.
+     *
+     * @return returns Spotify artist's events, otherwise
+     * returns {@code null} if an error occurs.
+     */
+    public SeatGeekEventsResponse getArtistEvents() {
+        try {
+            if (seatgeekURI == null) {
+                makeSeatGeekURI();
+            } // if
+            HttpRequest eventsRequest = HttpRequest.newBuilder()
+                .uri(URI.create(seatgeekURI))
+                .build(); // HttpRequest
+            HttpResponse<String> eventsResponse = HTTP_CLIENT
+                .send(eventsRequest, HttpResponse.BodyHandlers.ofString()); // HttpResponse
+            if (eventsResponse.statusCode() != 200) {
+                System.out.println("Error response: " + eventsResponse.statusCode());
+                System.out.println(eventsResponse.body());
+                return null;
+            } // if
+            String eventsResponseBody = eventsResponse.body();
+            SeatGeekEventsResponse seatgeekEventsResponse = GSON
+                .<SeatGeekEventsResponse>fromJson(
+                    eventsResponseBody, SeatGeekEventsResponse.class); // GSON
+            return seatgeekEventsResponse;
+        } catch (Exception e) {
+            System.err.println(e);
+            e.printStackTrace();
+            return null;
+        } // try-catch
+    } // getArtistEvents
 
 } // ApiApp
