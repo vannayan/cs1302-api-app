@@ -140,13 +140,9 @@ public class ApiApp extends Application {
         // apiCredentials
         apiCredentials();
 
-        // Spotify API
-        makeSpotifyURI();
+        // getSpotifyToken
         spotifyToken = getSpotifyToken();
         artistName = getArtistName();
-
-        // SeatGeek API
-//        artistEvents = getArtistEvents();
 
         // buttonEvents
         buttonEvents();
@@ -232,7 +228,6 @@ public class ApiApp extends Application {
         artistEvents = getArtistEvents();
         List<Event> events = artistEvents.getEvents();
         artistEvents.displayEvents();
-
         Platform.runLater(() -> {
             textFlow.getChildren().clear();
             Text nameText1 = new Text("\n     ̗̀ Spotify Artist");
@@ -341,6 +336,9 @@ public class ApiApp extends Application {
             if (spotifyToken == null) {
                 System.out.println("Failed to retrieve access token.");
                 return null;
+            } // if
+            if (spotifyURI == null) {
+                makeSpotifyURI();
             } // if
             HttpRequest artistRequest = HttpRequest.newBuilder()
                 .uri(URI.create(spotifyURI))
