@@ -196,7 +196,7 @@ public class ApiApp extends Application {
             helpAlert.setHeaderText("Press \"OK\" to continue.");
             String content1 = "A Spotify ID is the base-62 identifier at the end of a Spotify URL.";
             String content2 = " The URL can be obtained from Spotify's website in the search bar.";
-            String contentSeperator = "\n------------------------------";
+            String contentSeperator = "\n──────────────────────────────";
             String content3 = "\nAn example URL would look something like this:";
             String content4 = "\n\"https://open.spotify.com/artist/45eNHdiiabvmbp4erw26rg\"\n";
             String content5 = "\n\"45eNHdiiabvmbp4erw26rg\" would be the Spotify ID for ILLENIUM.";
@@ -230,27 +230,35 @@ public class ApiApp extends Application {
         artistEvents.displayEvents();
         Platform.runLater(() -> {
             textFlow.getChildren().clear();
-            Text nameText1 = new Text("\n     ̗̀ Spotify Artist");
-            Text nameText2 = new Text(": " + artistName + "   ̖́");
-            Text nameText3 = new Text("\n     ---------------");
-            Text eventText = new Text("");
-            if (events == null || events.isEmpty()) {
-                Text noEventsText1 = new Text(
-                    "\n     This Spotify artist has no events listed on SeatGeek at the moment.");
-                Text noEventsText2 = new Text(
-                    "\n     Please choose a different artist.");
-                textFlow.getChildren().addAll(
-                    nameText1, nameText2, nameText3, noEventsText1, noEventsText2);
+            if (artistName != null) {
+                Text nameText1 = new Text("\n     ̗̀ Spotify Artist");
+                Text nameText2 = new Text(": " + artistName + "   ̖́");
+                Text eventText = new Text("");
+                if (events == null || events.isEmpty()) {
+                    Text noEventsText1 = new Text(
+                        "\n\n     This Spotify artist has no events listed on SeatGeek for now.");
+                    Text noEventsText2 = new Text(
+                        "\n     Please choose a different artist.");
+                    textFlow.getChildren().addAll(
+                        nameText1, nameText2, noEventsText1, noEventsText2);
+                } else {
+                    for (int i = 0; i < events.size(); i++) {
+                        Event event = events.get(i);
+                        eventText.setText(eventText.getText() +
+                            "\n\n      Event Title: " + event.getTitle() +
+                            "\n      Date/Time: " + event.getDateTimeUTC() +
+                            "\n      Venue: " + event.getVenue().getName()  +
+                            "\n     ──────────────────");
+                    } // for
+                    messageLabel.setText("The time zone is set to UTC which is +5 hours from EST.");
+                    textFlow.getChildren().addAll(nameText1, nameText2, eventText);
+                } // if-else
             } else {
-                for (int i = 0; i < events.size(); i++) {
-                    Event event = events.get(i);
-                    eventText.setText(eventText.getText() +
-                        "\n      Event Title: " + event.getTitle() +
-                        "\n      Date/Time: " + event.getDateTimeUTC() +
-                        "\n      Venue: " + event.getVenue().getName()  +
-                        "\n     ---------------");
-                } // for
-                textFlow.getChildren().addAll(nameText1, nameText2, nameText3, eventText);
+                Text invalidIDText1 = new Text(
+                    "\n     Please enter a valid Spotify ID for your desired artist.");
+                Text invalidIDText2 = new Text(
+                    "\n     Refer to the \"Help\" button if you are confused.");
+                textFlow.getChildren().addAll(invalidIDText1, invalidIDText2);
             } // if-else
         }); // Platform.runLater
     } // load
@@ -367,6 +375,7 @@ public class ApiApp extends Application {
 
     /**
      * Method makes SeatGeek URI.
+     *
      */
     public void makeSeatGeekURI() {
         try {
