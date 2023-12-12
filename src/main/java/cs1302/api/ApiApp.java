@@ -269,7 +269,7 @@ public class ApiApp extends Application {
                 } // if-else
             } else {
                 Text invalidIDText1 = new Text(
-                    "     Please enter a valid Spotify ID for your desired artist.");
+                    "\n     Please enter a valid Spotify ID for your desired artist.");
                 Text invalidIDText2 = new Text(
                     "\n     Refer to the \"Help\" button if you are confused.");
                 messageLabel.setText("Invalid Spotify ID.");

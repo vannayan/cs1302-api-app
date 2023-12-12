@@ -55,4 +55,4 @@ The most exciting part of this project was having the freedom to create and desi
 > If you could start the project over from scratch, what do
 > you think might do differently and why?
 
-I would definitely try to see if I can implement any new functions for the user to make it easier or even more interactive. I also realized that implementing methods step-by-step was very important as it's more organized than trying to solve two different APIs at once.
+I would definitely try to see if I can implement any new functions for the user to make it easier or even more interactive. I also realized that implementing methods step-by-step was very important as it's more organized than trying to solve two different APIs at once. I do also want to go back and figure out why I have to press the "Load" button twice to refresh the output.
