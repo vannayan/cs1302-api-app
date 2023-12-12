@@ -14,7 +14,9 @@ Markdown is transformed into nice-looking HTML.
 
 > **Also, include the GitHub `https` URL to your repository.**
 
-TODO WRITE / REPLACE
+My app allows users to look up a Spotify artist's name with their Spotify ID and in addition to that, they can also retireve information about any upcoming events for that artist. There is a help button implemented into the app that provides an explanation and example of what a Spotify ID is. The Spotify ID is used in the Spotify API to retireve the artist's name and that name is used in the SeatGeek API to retrieve any events listed under that artist.
+
+https://github.com/vannayan/cs1302-api-app
 
 ## Part 1.2: APIs
 
@@ -25,32 +27,32 @@ TODO WRITE / REPLACE
 > information are provided below. If your app uses more than two RESTful
 > JSON APIs, then include them with similar formatting.
 
-### API 1
+### Spotify API
 
 ```
-https://.../replace/me
+https://api.spotify.com/v1/artists/45eNHdiiabvmbp4erw26rg
 ```
 
-> Replace this line with notes (if needed) or remove it (if not needed).
+> The access token is located as the header for the URL. This is included in my HttpRequest for Spotify and is not included in the URL. A Spotify access token is requested each time the "Load" button is pressed and is automatically included in the HttpRequest.
 
-### API 2
+### SeatGeek API
 
 ```
-https://../replace/me
+https://api.seatgeek.com/2/events?performers.slug=ILLENIUM&client_id=Mzg3Mjc2NjZ8MTcwMTcyNjUxNS44MDcxOA&client_secret=a8cf88a987a471d2b101eaf57d1b41eb99c84dff3105a911cda3ce9ba4535e17
 ```
 
-> Replace this line with notes (if needed) or remove it (if not needed).
+> The API key (client ID/client secret) are both included in the URL.
 
 ## Part 2: New
 
 > What is something new and/or exciting that you learned from working
 > on this project?
 
-TODO WRITE / REPLACE
+The most exciting part of this project was having the freedom to create and design my own app (with certain restrictions of course). This challenged me to learn how to overcome any layout problems and also pushed me to overcome any API issues/confusion.
 
 ## Part 3: Retrospect
 
 > If you could start the project over from scratch, what do
 > you think might do differently and why?
 
-TODO WRITE / REPLACE
+I would definitely try to see if I can implement any new functions for the user to make it easier or even more interactive. I also realized that implementing methods step-by-step was very important as it's more organized than trying to solve two different APIs at once.

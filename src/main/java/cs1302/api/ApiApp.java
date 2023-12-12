@@ -45,7 +45,7 @@ import javafx.stage.Stage;
  * This app utilizes the Spotify API to extract an artist's name based on the Spotify ID inputted
  * by the user. The Spotify ID is the base-62 identifier found at the end of the URL for a
  * specified artist. Once the artist's name has been retrieved, that data will be utilized by the
- * SeatGeek API to generate a list of upcoming events for the specfified artist.
+ * SeatGeek API to generate the listed events for the specfified artist.
  */
 public class ApiApp extends Application {
 
@@ -69,6 +69,7 @@ public class ApiApp extends Application {
     private HBox idLayer;
     private Button helpButton;
     private TextField idSearch;
+    private String spotifyIDSearch;
     private Button loadButton;
 
     // messageLayer
@@ -118,7 +119,7 @@ public class ApiApp extends Application {
         idLayer = new HBox(5);
         helpButton = new Button("Help");
         idSearch = new TextField(
-            "45eNHdiiabvmbp4erw26rg");
+            "Enter Artist's Spotify ID...");
         loadButton = new Button("Load");
 
         // messageLayer
@@ -139,14 +140,6 @@ public class ApiApp extends Application {
 
         // apiCredentials
         apiCredentials();
-
-        // getSpotifyToken
-        spotifyToken = getSpotifyToken();
-        artistName = getArtistName();
-
-        // buttonEvents
-        buttonEvents();
-
     } // ApiApp
 
     /** {@inheritDoc} */
@@ -171,6 +164,12 @@ public class ApiApp extends Application {
         apiLayer.getChildren().addAll(apiRegion1, apiLabel, apiRegion2);
         HBox.setHgrow(apiRegion1, Priority.ALWAYS);
         HBox.setHgrow(apiRegion2, Priority.ALWAYS);
+
+        // Spotify API
+        spotifyToken = getSpotifyToken();
+
+        // buttonEvents
+        buttonEvents();
     } // init
 
     /** {@inheritDoc} */
@@ -196,12 +195,16 @@ public class ApiApp extends Application {
             helpAlert.setHeaderText("Press \"OK\" to continue.");
             String content1 = "A Spotify ID is the base-62 identifier at the end of a Spotify URL.";
             String content2 = " The URL can be obtained from Spotify's website in the search bar.";
-            String contentSeperator = "\n──────────────────────────────";
-            String content3 = "\nAn example URL would look something like this:";
-            String content4 = "\n\"https://open.spotify.com/artist/45eNHdiiabvmbp4erw26rg\"\n";
-            String content5 = "\n\"45eNHdiiabvmbp4erw26rg\" would be the Spotify ID for ILLENIUM.";
+            String contentSeperator1 = "\n──────────────────────────────";
+            String content3 = "\nThere may be instances where you must press \"Load\" twice.";
+            String contentSeperator2 = "\n──────────────────────────────";
+            String content4 = "\nAn example URL would look something like this:";
+            String content5 = "\n\"https://open.spotify.com/artist/45eNHdiiabvmbp4erw26rg\"\n";
+            String content6 = "\n\"45eNHdiiabvmbp4erw26rg\" would be the Spotify ID for ILLENIUM.";
             helpAlert.setContentText(
-                content1 + content2 + contentSeperator + content3 + content4 + content5);
+                content1 + content2 +
+                contentSeperator1 + content3 + contentSeperator2 +
+                content4 + content5 + content6);
             helpAlert.showAndWait();
         }); // Platform.runLater
     } // helpAlert
@@ -225,27 +228,38 @@ public class ApiApp extends Application {
      * Method that contains functions for loadButton.
      */
     public void load() {
-        artistEvents = getArtistEvents();
+        artistName = getArtistName();
+        if (artistName != null) {
+            artistEvents = getArtistEvents();
+        } else {
+            Text emptySearchText = new Text("\n     Please enter a valid Spotify ID...");
+            textFlow.getChildren().clear();
+            textFlow.getChildren().add(emptySearchText);
+        } // if-else
+        makeSpotifyURI();
+        makeSeatGeekURI();
         List<Event> events = artistEvents.getEvents();
         artistEvents.displayEvents();
+
         Platform.runLater(() -> {
             textFlow.getChildren().clear();
             if (artistName != null) {
                 Text nameText1 = new Text("\n     ̗̀ Spotify Artist");
-                Text nameText2 = new Text(": " + artistName + "   ̖́");
+                Text nameText2 = new Text(": " + artistName + "   ̖́\n");
                 Text eventText = new Text("");
                 if (events == null || events.isEmpty()) {
                     Text noEventsText1 = new Text(
                         "\n\n     This Spotify artist has no events listed on SeatGeek for now.");
                     Text noEventsText2 = new Text(
                         "\n     Please choose a different artist.");
+                    messageLabel.setText("Press \"Help\" if you are confused.");
                     textFlow.getChildren().addAll(
                         nameText1, nameText2, noEventsText1, noEventsText2);
                 } else {
                     for (int i = 0; i < events.size(); i++) {
                         Event event = events.get(i);
                         eventText.setText(eventText.getText() +
-                            "\n\n      Event Title: " + event.getTitle() +
+                            "\n      Event Title: " + event.getTitle() +
                             "\n      Date/Time: " + event.getDateTimeUTC() +
                             "\n      Venue: " + event.getVenue().getName()  +
                             "\n     ──────────────────");
@@ -255,9 +269,10 @@ public class ApiApp extends Application {
                 } // if-else
             } else {
                 Text invalidIDText1 = new Text(
-                    "\n     Please enter a valid Spotify ID for your desired artist.");
+                    "     Please enter a valid Spotify ID for your desired artist.");
                 Text invalidIDText2 = new Text(
                     "\n     Refer to the \"Help\" button if you are confused.");
+                messageLabel.setText("Invalid Spotify ID.");
                 textFlow.getChildren().addAll(invalidIDText1, invalidIDText2);
             } // if-else
         }); // Platform.runLater
@@ -322,7 +337,12 @@ public class ApiApp extends Application {
      */
     public void makeSpotifyURI() {
         try {
-            spotifyID = URLEncoder.encode(idSearch.getText(), StandardCharsets.UTF_8);
+            spotifyIDSearch = idSearch.getText();
+            if (spotifyIDSearch.equals("Enter Artist's Spotify ID...")) {
+                System.out.println("Please enter a valid Spotify ID.");
+                return;
+            } // if
+            spotifyID = URLEncoder.encode(spotifyIDSearch, StandardCharsets.UTF_8);
             spotifyURI = ARTISTS_ENDPOINT + spotifyID;
         } catch (Exception e) {
             System.err.println("Error encoding Spotify ID: " + e.getMessage());
@@ -379,6 +399,7 @@ public class ApiApp extends Application {
      */
     public void makeSeatGeekURI() {
         try {
+            artistName = getArtistName();
             String performersSlug = URLEncoder.encode(artistName, StandardCharsets.UTF_8);
             performersSlug = performersSlug.replace("+", "-");
             String query = String.format("?performers.slug=%s&client_id=%s&client_secret=%s",
